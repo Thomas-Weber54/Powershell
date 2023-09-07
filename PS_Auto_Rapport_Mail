@@ -1,0 +1,285 @@
+#===================================================================================================================================#
+# 
+#  Recherche du fichier EXCEL et recherche de la feuille du jour
+#
+#===================================================================================================================================#
+
+
+# Chemin du fichier Excel
+$excelFilePath = <#Chemin d'accès fichier excel#>
+
+# Nom de la feuille contenant le tableau
+$dateJour = Get-Date -Format "dd-MM-yyyy"
+
+# Formatage Nom de la feuille contenant le tableau
+$dateTitre = Get-Date -Format "dd/MM/yyyy"
+
+# Charger l'assembly pour gérer les fichiers Excel
+Add-Type -AssemblyName Microsoft.Office.Interop.Excel
+
+# Créer une instance Excel
+$excel = New-Object -ComObject Excel.Application
+$excel.Visible = $false
+
+#Ouvrir le classeur
+$workbook = $excel.Workbooks.Open($excelFilePath, [System.Type]::Missing, $true)
+
+#===================================================================================================================================#
+# 
+#  Gestionnaire d'erreur 
+#
+#===================================================================================================================================#
+
+try {
+    # Tentative d'obtention de la feuille
+    $worksheet = $workbook.Worksheets.Item($dateJour)
+}
+catch [System.Runtime.InteropServices.COMException] {
+    # Gestion de l'erreur si la feuille n'est pas présente
+    $errorMessage = "Erreur nommage feuille : La feuille '$dateJour' n'est pas présente dans le fichier Excel."
+    [System.Windows.Forms.MessageBox]::Show($errorMessage, "Erreur", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error)
+    $excel.Quit()
+    [System.Runtime.InteropServices.Marshal]::ReleaseComObject($excel)
+    exit
+}
+
+#===================================================================================================================================#
+# 
+#  Mise en page du rapport
+#
+#===================================================================================================================================#
+
+$usedRange = $worksheet.UsedRange
+$tableContent = $usedRange.Value2
+
+# Formatage du tableau en HTML
+$tableHtml = "<table style='border-collapse: collapse; border: 1px solid black; margin: 0; padding: 0; text-align: center;'>
+                <style>
+                    .server-name { font-weight: bold; text-align: center; }
+                </style>"
+
+
+#Code hexa Jaune Warning : #FDEC73
+#Code hexa Orange Warning : #EB7C20
+#Code hexa Gris En cours : #7D7A77
+
+
+# Contenu du tableau
+for ($i = 1; $i -lt $tableContent.GetLength(0); $i++) {
+
+    
+    $tableHtml += "<tr>"
+    for ($j = 1; $j -lt $tableContent.GetLength(1) + 1; $j++) {  # Ajout d'une colonne
+        $cellValue = $tableContent[$i, $j]
+        $cellStyle = "border: 1px solid black; padding: 8px; margin: 0; text-align: center;"
+
+        if($j -eq 1 -and $i -ne 1 -and $i -ne 2)
+        {
+           $cellStyle += "width: 10%; font-weight: bold;" #Augmentation de largeur des cellules colonne 1 sauf ligne 1 et 2. Et ajouter de caractère GRAS
+        }
+        # Bleu
+        if ($i -eq 1 -or $i -eq 2) {
+            $cellStyle += " background-color: #4069EC; color: white;"
+        }
+
+        #Affichage en vert colonne SAUVEGARDE OK
+        if ($j -eq 5 -and ($i -ne 1 -and $i -ne 2)) {
+            $cellStyle += " background-color: lightgreen;" 
+        }
+
+        # Ajouter une condition pour la colonne 4 où la valeur est différente de 0 / Sauvegarde toujours en cours
+        if ($j -eq 4 -and $cellValue -ne 0 -and $i -gt 2) {
+            $cellStyle += " background-color: #B7B7B7; color: black;"  # Arrière-plan gris et texte noir
+        }
+
+        # Nb Warning colorisation
+        if ($j -eq 7 -and $cellValue -ne 0 -and $i -gt 2) {
+            $cellStyle += " background-color: #FDEC73; color: black;"  # Arrière-plan Jaune et texte noir
+        }
+
+        # Pas de Traitement colorisation
+        if ($j -eq 8 -and $cellValue -ne 0 -and $i -gt 2) {
+            $cellStyle += " background-color: lightgreen; color: black;"  # Arrière-plan Vert et texte noir
+        }
+
+        # Warning transférés colorisation
+        if ($j -eq 10 -and $cellValue -ne 0 -and $i -gt 2) {
+            $cellStyle += " background-color: #FDEC73; color: black;"  # Arrière-plan Jaune et texte noir
+        }
+
+        # Ticket Pilotage colorisation
+        if ($j -eq 11 -and $cellValue -ne 0 -and $i -gt 2) {
+            $cellStyle += " background-color: #FDEC73; color: black;"  # Arrière-plan Jaune et texte noir
+        }
+
+        # STC colorisation
+        if ($j -eq 12 -and $cellValue -ne 0 -and $i -gt 2) {
+            $cellStyle += " background-color: #EB7C20; color: black;"  # Arrière-plan Orange et texte noir
+        }
+
+        # SEI colorisation
+        if ($j -eq 13 -and $cellValue -ne 0 -and $i -gt 2) {
+            $cellStyle += " background-color: #EB7C20; color: black;"  # Arrière-plan Orange et texte noir
+        }
+
+         # AGIL'IT colorisation
+        if ($j -eq 14 -and $cellValue -ne 0 -and $i -gt 2) {
+            $cellStyle += " background-color: #EB7C20; color: black;"  # Arrière-plan Orange et texte noir
+        }
+
+        # Support Interne colorisation
+        if ($j -eq 15 -and $cellValue -ne 0 -and $i -gt 2) {
+            $cellStyle += " background-color: #EB7C20; color: black;"  # Arrière-plan Orange et texte noir
+        }
+
+         # Support Interne colorisation Erreur
+        if ($j -eq 17 -and $cellValue -ne 0 -and $i -gt 2) {
+            $cellStyle += " background-color: #F08080; color: black;"  # Arrière-plan Rouge et texte noir
+        }
+
+        # STC colorisation Erreur
+        if ($j -eq 18 -and $cellValue -ne 0 -and $i -gt 2) {
+            $cellStyle += " background-color: #F08080; color: black;"  # Arrière-plan Rouge et texte noir
+        }
+
+         # SEI colorisation Erreur
+        if ($j -eq 19 -and $cellValue -ne 0 -and $i -gt 2) {
+            $cellStyle += " background-color: #F08080; color: black;"  # Arrière-plan Rouge et texte noir
+        }
+
+        # AGIL'IT colorisation Erreur
+        if ($j -eq 20 -and $cellValue -ne 0 -and $i -gt 2) {
+            $cellStyle += " background-color: #F08080; color: black;"  # Arrière-plan Rouge et texte noir
+        }
+
+         # Case/Incident colorisation Erreur
+        if ($j -eq 21 -and $cellValue -ne '/' -and $i -gt 2) {
+            $cellStyle += " background-color: #F08080; color: black;"  # Arrière-plan Rouge et texte noir
+        }
+        
+        # Matin 09h00 colorisation
+        if ($i -eq 1 -and ($j -ge 1 -and $j -le 5)) {
+            $cellStyle += " background-color: #C2C2C2; color: black; font-weight: bold;"  # Arrière-plan Gris et texte noir et gras 
+        }
+
+        
+        if ($i -eq 1 -and $j -le 9 -and $j -ge 7) {
+                $cellStyle += " background-color: #EB7C20; color: black;"  # Arrière-plan Orange et texte noir - Sauvegardes en Warning
+        }
+
+        if ($i -eq 1 -and $j -le 21 -and $j -ge 17) {
+                $cellStyle += " background-color: #F08080; color: black;"  # Arrière-plan rouge et texte noir - Sauvegardes en Erreur
+        }
+
+        if ($cellValue -eq 0)
+        {
+            $cellStyle += " background-color: #FEFEFE; color: black;"
+        }
+
+        #Séparation Colonne 6 et 16 (affichage en noir)
+        if ($j -eq 6 -or $j -eq 16)
+        {
+            #Cellule NOIR si elles sont vides
+            if ($cellValue -eq $null -or [string]::IsNullOrEmpty($cellValue)) {
+                $cellStyle += " background-color: black;"
+                
+             }
+        }
+
+
+        if ($j -le 15 -and $j -ge 12 -and [string]::IsNullOrEmpty($cellValue))
+        {
+            $cellStyle += " background-color: #3E3E3E; color: white; position: relative;"
+            #$cellValue = "<div style='position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);'>✗</div>"
+        }
+
+
+        if ($j -le 20 -and $j -ge 17 -and [string]::IsNullOrEmpty($cellValue))
+        {
+            $cellStyle += " background-color: #3E3E3E; color: white; position: relative;"
+            #$cellValue = "<div style='position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);'>✗</div>"
+        }
+
+        
+        # Fusion des cellules ligne 1 colonne 1 à 5
+        if ($i -eq 1 -and $j -le 5) {
+            $colSpan = 5
+            $cellStyle += "text-align: center;"
+            $tableHtml += "<td colspan='$colSpan' style='$cellStyle'>$cellValue</td>"
+            $j += 4  # Passer à la prochaine colonne après la fusion
+        }
+        # Fusion des cellules ligne 1 colonne 7 à 16
+        elseif ($i -eq 1 -and $j -ge 7 -and $j -le 15) {
+            $colSpan = 9
+            $cellStyle += "text-align: center;"
+            $tableHtml += "<td colspan='$colSpan' style='$cellStyle'>$cellValue</td>"
+            $j += 8  # Passer à la prochaine colonne après la fusion
+        }
+        elseif ($i -eq 1 -and $j -ge 17 -and $j -le 21) {
+            $colSpan = 5
+            $cellStyle += "text-align: center;"
+            $tableHtml += "<td colspan='$colSpan' style='$cellStyle'>$cellValue</td>"
+            $j += 4  # Passer à la prochaine colonne après la fusion
+        }
+
+        else {
+            $tableHtml += "<td style='$cellStyle'>$cellValue</td>"
+        }
+
+
+    }
+    $tableHtml += "</tr>"
+}
+
+
+$tableHtml += "</tr>"
+
+$tableHtml += "</table>"
+
+# Envelopper le tableau dans des balises <p>
+$tableHtml = "<p>Bonjour,</p><p>Voici l’état des SVG ce jour :</p>" + $tableHtml
+
+
+$dom = $env:userdomain
+$usr = $env:username
+$Fullname = ([adsi]"WinNT://$dom/$usr,user").fullname
+
+Add-Type -AssemblyName System.Drawing
+
+
+$base64Signature = @"
+<# Image en BASE64 #>
+"@
+# Conversion de la chaîne Base64 en image
+$bytesSignature = [System.Convert]::FromBase64String($base64Signature)
+$imageSignature = [System.Drawing.Image]::FromStream([System.IO.MemoryStream]::new($bytesSignature))
+
+# Encodage de l'image en Base64 pour l'inclure dans l'e-mail
+$base64ImageSignature = [System.Convert]::ToBase64String($bytesSignature)
+
+# Ajouter du texte après le tableau
+$texteApresTableau = "<p>Cordialement,</p>
+
+<table style='font-weight: bold;'>
+<tr>
+  <td style='font-size: 16px; font-family: Arial;'><p>$Fullname</p></td>
+</tr>
+</table>
+
+<img src='data:image/png;base64,$base64ImageSignature'>
+
+"
+$tableHtml += $texteApresTableau
+
+# Envoi de l'e-mail avec le tableau en tant que corps HTML
+
+$destinataire = <# mail #>
+$cc = <# mail #> 
+$from = <# mAIL #>
+
+Send-MailMessage -SmtpServer "<# Serveur SMTP #>" -To $destinataire -Cc $cc -From $from -Subject "Rapport sauvegarde du $dateTitre" -BodyAsHtml -Body $tableHtml -Encoding UTF8
+
+# Fermer le classeur Excel
+$workbook.Close($false)
+$excel.Quit()
+[System.Runtime.Interopservices.Marshal]::ReleaseComObject($excel)
